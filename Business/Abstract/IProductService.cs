@@ -1,0 +1,20 @@
+﻿using Entities.Concrete;
+using Entities.DTOs;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Business.Abstract
+{
+	public interface IProductService
+	{
+		//Business hem entitiy hem de access katmanlarını kullanılır project referance den entitiy ve access katmanlarını seçmemiz gerekiyor.
+		List<Product>GetAll();
+		List<Product> GetAllByCategoryId(int id);
+		List<Product> GetByUnitPrice(decimal min, decimal max);
+
+		List<ProductDetailDto> GetProductDetails();
+	}
+}
