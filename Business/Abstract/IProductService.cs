@@ -12,12 +12,12 @@ namespace Business.Abstract
 	public interface IProductService
 	{
 		//Business hem entitiy hem de access katmanlarını kullanılır project referance den entitiy ve access katmanlarını seçmemiz gerekiyor.
-		List<Product>GetAll();
-		List<Product> GetAllByCategoryId(int id);
-		List<Product> GetByUnitPrice(decimal min, decimal max);
+		IDataResult<List<Product>> GetAll();
+		IDataResult<List<Product>> GetAllByCategoryId(int id);
+		IDataResult<List<Product>> GetByUnitPrice(decimal min, decimal max);
 
-		List<ProductDetailDto> GetProductDetails();
-		Product GetById(int productId);
+		IDataResult<List<ProductDetailDto>> GetProductDetails();
+		IDataResult<Product> GetById(int productId); //burada liste kullanmıyoruz Id istediğimiz icin.
 		IResult Add(Product product);
 		
 	}
