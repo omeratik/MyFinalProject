@@ -1,6 +1,8 @@
 
 using Business.Abstract;
 using Business.Concrete;
+using DataAccess.Abstract;
+using DataAccess.Concrete.EntityFramework;
 
 namespace WebAPI
 {
@@ -11,12 +13,14 @@ namespace WebAPI
 			var builder = WebApplication.CreateBuilder(args);
 
 			// Add services to the container.
+			//Autofac, Ninject,CastleWindsor,StructureMap,LightInect,DryInject -->IoC Container Altyapýsý sunarlar.
+			//AOP -- Autofac Aop imkaný sunuyor.
 
 			builder.Services.AddControllers();
-			// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
 			builder.Services.AddSingleton<IProductService,ProductManager>();
+			builder.Services.AddSingleton<IProductDal, EfProductDal>();
 
 			var app = builder.Build();
 
