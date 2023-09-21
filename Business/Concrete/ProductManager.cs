@@ -10,6 +10,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Business.ValidationRules.FluentValidation;
+using Core.CrossCuttingConcerns.Validation;
+using FluentValidation;
 
 namespace Business.Concrete
 {
@@ -23,17 +26,16 @@ namespace Business.Concrete
 		}
 
 		// " [LogAspect] "--> AOP Bir metodun önünde ve sonunda bir metod hata verdiğinde, çalışan kod parçacıklarını bu mimari ile yazıyoruz. 
-		
-		
+
+		[Validat]
 		public IResult Add(Product product)
 		{
 
-			//business kodları.
-			if (product.ProductName.Length<2)
-			{
-				//magic strings
-				return new ErrorResult(Messages.ProductNameInvalid);
-			}
+			ValidationTool.Validate(new ProductValidator(), product);
+
+			//bussines codes...
+
+			
 			_productDal.Add(product);
 
 			
