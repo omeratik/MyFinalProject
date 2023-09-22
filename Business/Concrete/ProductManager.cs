@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Business.ValidationRules.FluentValidation;
 using Core.CrossCuttingConcerns.Validation;
 using FluentValidation;
+using Core.Aspects.Autofac.Validation;
 
 namespace Business.Concrete
 {
@@ -27,15 +28,11 @@ namespace Business.Concrete
 
 		// " [LogAspect] "--> AOP Bir metodun önünde ve sonunda bir metod hata verdiğinde, çalışan kod parçacıklarını bu mimari ile yazıyoruz. 
 
-		[Validat]
+		[ValidationAspect(typeof(ProductValidator))]
 		public IResult Add(Product product)
 		{
-
-			ValidationTool.Validate(new ProductValidator(), product);
-
 			//bussines codes...
 
-			
 			_productDal.Add(product);
 
 			
