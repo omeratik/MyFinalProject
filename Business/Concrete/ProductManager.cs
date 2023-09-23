@@ -14,29 +14,42 @@ using Business.ValidationRules.FluentValidation;
 using Core.CrossCuttingConcerns.Validation;
 using FluentValidation;
 using Core.Aspects.Autofac.Validation;
+using Business.CCS;
 
 namespace Business.Concrete
 {
 	public class ProductManager : IProductService
 	{
 		IProductDal _productDal;
+		ILogger _logger;
 
 		public ProductManager(IProductDal productDal)
 		{
 			_productDal = productDal;
+			
 		}
 
 		// " [LogAspect] "--> AOP Bir metodun önünde ve sonunda bir metod hata verdiğinde, çalışan kod parçacıklarını bu mimari ile yazıyoruz. 
 
-		[ValidationAspect(typeof(ProductValidator))]
+		//[ValidationAspect(typeof(ProductValidator))]
+		
 		public IResult Add(Product product)
 		{
-			//bussines codes...
+			_logger.Log();
+			try
+			{
+				_productDal.Add(product);
 
-			_productDal.Add(product);
 
-			
-			return new SuccessResult(Messages.ProductAdded);
+				return new SuccessResult(Messages.ProductAdded);
+			}
+			catch (Exception exception)
+			{
+
+				_logger.Log();
+			}
+			return new ErrorResult();
+		
 		}
 
 		public IDataResult<List<Product>> GetAll()

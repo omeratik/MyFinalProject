@@ -3,6 +3,7 @@
 namespace Core.Utilities.Interceptors
 {
 	//Burası bütün metodların çatısıdır. Metodlar ilk baş buralardan geçecek.
+	//invocation  = business methodlarıdır.
 	//Business de sürekli olarak try-catch yazmak yerine temel bir try-catch yazarak bütün metodlarda ortak kullanıyoruz.
 	public abstract class MethodInterception : MethodInterceptionBaseAttribute
 	{
@@ -10,6 +11,8 @@ namespace Core.Utilities.Interceptors
 		protected virtual void OnAfter(IInvocation invocation) { }
 		protected virtual void OnException(IInvocation invocation, System.Exception e) { }
 		protected virtual void OnSuccess(IInvocation invocation) { }
+
+
 
 		
 		public override void Intercept(IInvocation invocation)
