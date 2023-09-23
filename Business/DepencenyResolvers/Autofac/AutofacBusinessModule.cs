@@ -16,7 +16,9 @@ public class AutofacBusinessModule : Module
 	{
 		builder.RegisterType<ProductManager>().As<IProductService>().SingleInstance(); //Biri senden IProductService isterse ona Product Manager instance ver demek.
 		builder.RegisterType<EfProductDal>().As<IProductDal>().SingleInstance();
-		
+
+		builder.RegisterType<CategoryManager>().As<ICategoryService>().SingleInstance();
+		builder.RegisterType<EfCategoryDal>().As<ICategoryDal>().SingleInstance();
 
 		var assembly = System.Reflection.Assembly.GetExecutingAssembly();
 
