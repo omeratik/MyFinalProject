@@ -16,6 +16,7 @@ using FluentValidation;
 using Core.Aspects.Autofac.Validation;
 using Business.CCS;
 using Core.Utilities.Business;
+using Business.BusinessAspects.Autofac;
 
 namespace Business.Concrete
 {
@@ -33,9 +34,12 @@ namespace Business.Concrete
 
 		// " [LogAspect] "--> AOP Bir metodun önünde ve sonunda bir metod hata verdiğinde, çalışan kod parçacıklarını bu mimari ile yazıyoruz. 
 
-		//[ValidationAspect(typeof(ProductValidator))]
+		
 
-
+		[ValidationAspect(typeof(ProductValidator))]
+		
+		//Claim -- yetkilendirmede "product.add veya admin olması gerekiyor.
+		[SecuredOperation("product.add,user")]
 		public IResult Add(Product product)
 		{
 

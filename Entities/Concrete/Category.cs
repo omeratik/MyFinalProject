@@ -1,4 +1,4 @@
-﻿using Core.Entities;
+﻿using Core.Entities.Abstract;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Entities.Concrete
 {
-	//Çıplak Class Kalmasın -- bir class bir implementasyon almadıysa problem yaşar ileride.
+    //Çıplak Class Kalmasın -- bir class bir implementasyon almadıysa problem yaşar ileride.
     public class Category:IEntity
 	{
         public int CategoryId { get; set; }
