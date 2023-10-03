@@ -20,7 +20,8 @@ namespace Business.Abstract
 		IDataResult<Product> GetById(int productId); //burada liste kullanmıyoruz Id istediğimiz icin.
 		IResult Add(Product product);
 		IResult Update(Product product);
-		
+
+		IResult AddTransactionalTest(Product product);
 		
 	}
 }

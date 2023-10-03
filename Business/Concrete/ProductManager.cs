@@ -17,6 +17,9 @@ using Core.Aspects.Autofac.Validation;
 using Business.CCS;
 using Core.Utilities.Business;
 using Business.BusinessAspects.Autofac;
+using Core.Aspects.Autofac.Caching;
+using Core.Aspects.Autofac.Transaction;
+using Core.Aspects.Autofac.Performance;
 
 namespace Business.Concrete
 {
@@ -34,17 +37,19 @@ namespace Business.Concrete
 
 		// " [LogAspect] "--> AOP Bir metodun önünde ve sonunda bir metod hata verdiğinde, çalışan kod parçacıklarını bu mimari ile yazıyoruz. 
 
-		
+
 
 		[ValidationAspect(typeof(ProductValidator))]
-		
+
 		//Claim -- yetkilendirmede "product.add veya admin olması gerekiyor.
-		[SecuredOperation("product.add,user")]
+		[SecuredOperation("product.add,admin")]
+		
+		[CacheRemoveAspect("IProductService.Get")]
 		public IResult Add(Product product)
 		{
 
 			IResult result = BusinessRules.Run(NotSameProductName(product.ProductName),
-				CheckIfProductCountOfCategoryCorrect(product.CategoryId),CheckIfCategoryLimitExceded());
+				CheckIfProductCountOfCategoryCorrect(product.CategoryId), CheckIfCategoryLimitExceded());
 
 			if (result != null) //kurala uymayan durum oluşmuşsa.
 			{
@@ -55,6 +60,7 @@ namespace Business.Concrete
 			_productDal.Add(product);
 			return new SuccessResult(Messages.ProductAdded);
 
+			//      ----BU KISIM İŞ KURALLARININ KÖTÜ YAZILMIŞ HALİ.-----
 
 			//if (CheckIfProductCountOfCategoryCorrect(product.CategoryId).Success)
 			//{
@@ -67,6 +73,8 @@ namespace Business.Concrete
 
 		}
 
+		[SecuredOperation("product.list,user")]
+		[CacheAspect()] //key,value
 		public IDataResult<List<Product>> GetAll()
 		{
 			if (DateTime.Now.Hour == 12)
@@ -81,7 +89,8 @@ namespace Business.Concrete
 		{
 			return new SuccessDataResult<List<Product>>(_productDal.GetAll(p => p.CategoryId == id));
 		}
-
+		[CacheAspect]
+		
 		public IDataResult<Product> GetById(int productId)
 		{
 			return new SuccessDataResult<Product>(_productDal.Get(p => p.ProductId == productId));
@@ -97,16 +106,26 @@ namespace Business.Concrete
 			return new SuccessDataResult<List<ProductDetailDto>>(_productDal.GetProductDetails());
 		}
 
+
+		[ValidationAspect(typeof(ProductValidator))]
+		[CacheRemoveAspect("IProductService.Get")]
+		[PerformanceAspect(5)]
 		public IResult Update(Product product)
 		{
+			var result = _productDal.GetAll(p => p.CategoryId == product.CategoryId).Count;
+			if (result > 25)
+			{
+				return new ErrorResult(Messages.ProductCountOfCategoryError);
+			}
 			throw new NotImplementedException();
 		}
+		
 
 		//iş kuralı parçacığı olduğu icin sadece burada kullanılmalı bu yüzden private olmalı.
 		private IResult CheckIfProductCountOfCategoryCorrect(int categoryId)
 		{
 			var result = _productDal.GetAll(p => p.CategoryId == categoryId).Count;
-			if (result > 10)
+			if (result > 25)
 			{
 				return new ErrorResult(Messages.ProductCountOfCategoryError);
 			}
@@ -124,11 +143,19 @@ namespace Business.Concrete
 		private IResult CheckIfCategoryLimitExceded() //Category service kullanan bir ürünün kuralıdır
 		{
 			var result = _categoryService.GetAll();
-			if (result.Data.Count>15)
+			if (result.Data.Count > 25)
 			{
 				return new ErrorResult(Messages.CategoryLimitExceded);
 			}
 			return new SuccessResult();
+		}
+
+		[TransactionScopeAspect]
+		public IResult AddTransactionalTest(Product product)
+		{
+			_productDal.Update(product);
+			_productDal.Add(product);
+			return new SuccessResult(Messages.ProductUpdated);
 		}
 	}
 }

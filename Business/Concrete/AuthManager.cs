@@ -1,5 +1,6 @@
 ﻿using Business.Abstract;
 using Business.Constants;
+using Core.Aspects.Autofac.Performance;
 using Core.Entities.Concrete;
 using Core.Utilities.Results;
 using Core.Utilities.Security.Hashing;
@@ -41,6 +42,7 @@ namespace Business.Concrete
 			return new SuccessDataResult<User>(user, Messages.UserRegistered);
 		}
 
+		
 		public IDataResult<User> Login(UserForLoginDto userForLoginDto)
 		{
 			var userToCheck = _userService.GetByMail(userForLoginDto.Email);

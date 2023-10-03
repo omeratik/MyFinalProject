@@ -5,6 +5,8 @@ using Autofac.Extensions.DependencyInjection;
 using Business.Abstract;
 using Business.Concrete;
 using Business.DepencenyResolvers.Autofac;
+using Core.DependencyResolvers;
+using Core.Extensions;
 using Core.Utilities.IoC;
 using Core.Utilities.Security.Encryption;
 using Core.Utilities.Security.JWT;
@@ -29,8 +31,8 @@ namespace WebAPI
 			builder.Services.AddControllers();
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
-			builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-			
+		
+
 
 
 			//builder.Services.AddSingleton<IProductService,ProductManager>();
@@ -60,7 +62,12 @@ namespace WebAPI
 						IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey)
 					};
 				});
-			ServiceTool.Create(builder.Services);
+
+			//Yarýn Core module gibi farklý moduller oluþturduðumuzda kullanabilmemizi saðlýyor.
+			builder.Services.AddDepencenyResolvers(new ICoreModule[]
+		{
+				new CoreModule()
+		});
 
 			var app = builder.Build();
 			
@@ -73,8 +80,8 @@ namespace WebAPI
 
 			app.UseHttpsRedirection();
 
-			app.UseAuthentication();
-			app.UseAuthorization();
+			app.UseAuthentication(); //Keydir
+			app.UseAuthorization(); //Burasý keyden sonra ne yapýlacaksa ona izin verendir. Önce Authentication olmasý gerekir.
 		
 
 			app.MapControllers();
