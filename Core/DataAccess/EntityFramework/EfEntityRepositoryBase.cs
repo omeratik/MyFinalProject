@@ -14,7 +14,7 @@ namespace Core.DataAccess.EntityFramework
 		where TContext : DbContext, new()
 	{
 
-		public void Add(TEntity entity)
+		public virtual void Add(TEntity entity)
 		{
 			//IDisposable pattern implementation of c#  <= using
 			using (TContext context = new TContext())

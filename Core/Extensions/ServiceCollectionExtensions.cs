@@ -12,7 +12,7 @@ namespace Core.Extensions
 	{
 		//Core katmanı dahil ekleyeceğimiz bütün injectionları bir arada toplayabileceğimiz bir yapı yaptık
 		//Polimorfizm kullanıldı.
-		public static IServiceCollection AddDepencenyResolvers(this IServiceCollection serviceCollection,
+		public static IServiceCollection AddDependencyResolvers(this IServiceCollection serviceCollection,
 			ICoreModule[] modules)
 		{
 			foreach (var module in modules)
@@ -20,7 +20,8 @@ namespace Core.Extensions
 				module.Load(serviceCollection);
 			}
 
-			return ServiceTool.Create(serviceCollection);
+			ServiceTool.Create(serviceCollection);
+			return serviceCollection;
 		}
 	}
 }

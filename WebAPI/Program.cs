@@ -1,4 +1,3 @@
-
 using Autofac;
 using Autofac.Core;
 using Autofac.Extensions.DependencyInjection;
@@ -13,7 +12,12 @@ using Core.Utilities.Security.JWT;
 using DataAccess.Abstract;
 using DataAccess.Concrete.EntityFramework;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using WebAPI.Hubs;
+using WebAPI.SignalR;
+
 
 namespace WebAPI
 {
@@ -23,15 +27,38 @@ namespace WebAPI
 		{
 			var builder = WebApplication.CreateBuilder(args);
 
-			// Add services to the container.
-			//Autofac, Ninject,CastleWindsor,StructureMap,LightInect,DryInject -->IoC Container Altyapýsý sunarlar.
-			//AOP -- Autofac Aop imkaný sunuyor.
-			//Postsharp 
+            // Add services to the container.
+            //Autofac, Ninject,CastleWindsor,StructureMap,LightInect,DryInject -->IoC Container AltyapÄ± sunarlar.
+            //AOP -- Autofac Aop imkanÄ± sunuyor.
 
-			builder.Services.AddControllers();
+            
+
+            builder.Services.AddControllers();
 			builder.Services.AddEndpointsApiExplorer();
 			builder.Services.AddSwaggerGen();
-		
+            builder.Services.AddCors();
+			builder.Services.AddMemoryCache();
+			builder.Services.AddHttpContextAccessor();
+			
+			// SignalR servislerini ekleyin
+            builder.Services.AddSignalR(options =>
+            {
+                // SignalR yapÄ±landÄ±rmasÄ±
+                options.EnableDetailedErrors = true;
+                options.MaximumReceiveMessageSize = 102400; // 100 KB
+            });
+            
+            // SignalR servisini kaydedin
+            builder.Services.AddSingleton<ISignalRService, SignalRService>();
+            
+			//builder.WebHost.ConfigureKestrel(options =>
+			//{
+			//options.ListenAnyIP(5000, listenOptions=>{
+			//	listenOptions.UseHttps();
+			//});
+			//});
+
+
 
 
 
@@ -39,14 +66,20 @@ namespace WebAPI
 			//builder.Services.AddSingleton<IProductDal,EfProductDal>();
 
 
-			//Farklý bir IoC ortamý kullanmak istiyorsak <Autofac> bu syntax ý kullanýrýz.
+			//FarklÄ± bir IoC ortam kullanmak istiyorsak <Autofac> bu syntax kullanÄ±rÄ±z.
 			builder.Host.UseServiceProviderFactory(services => new AutofacServiceProviderFactory())
 				.ConfigureContainer<ContainerBuilder>
 				(builder => { builder.RegisterModule(new AutofacBusinessModule()); });
+			
+			
+			//builder.WebHost.UseUrls("https://www.atkdepoerp.com:5000");
+
 
 
 
 			var tokenOptions = builder.Configuration.GetSection("TokenOptions").Get<TokenOptions>();
+
+
 
 			builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 				.AddJwtBearer(options =>
@@ -59,33 +92,101 @@ namespace WebAPI
 						ValidIssuer = tokenOptions.Issuer,
 						ValidAudience = tokenOptions.Audience,
 						ValidateIssuerSigningKey = true,
-						IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey)
+						IssuerSigningKey = SecurityKeyHelper.CreateSecurityKey(tokenOptions.SecurityKey),
+						RoleClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role",
+						NameClaimType = "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
 					};
+					options.Events = new JwtBearerEvents
+					{
+						OnTokenValidated = context =>
+						{
+							var token = context.SecurityToken as JwtSecurityToken;
+							Console.WriteLine($"Token doÄŸrulandÄ±. Roller: {string.Join(", ", token.Claims.Where(c => c.Type == "http://schemas.microsoft.com/ws/2008/06/identity/claims/role").Select(c => c.Value))}");
+							return Task.CompletedTask;
+						},
+						OnChallenge = context =>
+						{
+							Console.WriteLine($"Token doÄŸrulama baÅŸarÄ±sÄ±z: {context.Error ?? "Bilinmeyen Hata"}");
+							return Task.CompletedTask;
+						}
+					};
+
+					// SignalR ve JWT entegrasyonu
+					options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            
+                            // Path'i kontrol et
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && 
+                                (path.StartsWithSegments("/stokHub") || path.StartsWithSegments("/bildirimHub")))
+                            {
+                                // Token'Ä± context'e ekle
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
 				});
 
-			//Yarýn Core module gibi farklý moduller oluþturduðumuzda kullanabilmemizi saðlýyor.
-			builder.Services.AddDepencenyResolvers(new ICoreModule[]
+			//YarÄ±n Core module gibi farklÄ± moduller oluÅŸturduÄŸumuzda kullanabilmemizi saÄŸlÄ±yor.
+			builder.Services.AddDependencyResolvers(new ICoreModule[]
 		{
 				new CoreModule()
 		});
 
 			var app = builder.Build();
+
+			var autofacContainer = app.Services.GetAutofacRoot();
+			ServiceTool.SetContainer(autofacContainer);
+
 			
 			// Configure the HTTP request pipeline.
-			if (app.Environment.IsDevelopment())
 			{
 				app.UseSwagger();
 				app.UseSwaggerUI();
+
+			}
+            
+            app.ConfigureCustomExceptionMiddleware(); //her yere try cath yazmak yerine tek at altÄ±nda topluyoruz.
+            app.UseRouting();
+			app.UseCors(builder => builder
+			  .WithOrigins(
+			  "http://localhost:4200",
+			    "http://192.168.1.3:4200", 
+			   "http://192.168.1.116:4200", 
+			    "http://192.168.1.56:4200", 
+			    "http://192.168.1.156:4200", 
+			    "http://192.168.1.170:4200", 
+			    "http://localhost:44317",
+			    "https://localhost:5000",
+			  	"https://www.atkdepoerp.com",
+			  	"https://www.atkdepoerp.com:5000",
+			  	"https://api.atkdepoerp.com:5000"
+			   )
+			  
+				.AllowAnyHeader()
+				.AllowAnyMethod()
+			.AllowCredentials());
+			if (!app.Environment.IsDevelopment())
+			{
+				app.UseHttpsRedirection();
 			}
 
-			app.UseHttpsRedirection();
 
 			app.UseAuthentication(); //Keydir
-			app.UseAuthorization(); //Burasý keyden sonra ne yapýlacaksa ona izin verendir. Önce Authentication olmasý gerekir.
-		
+			app.UseAuthorization(); //BurasÄ± keyden sonra ne yapÄ±lacaksa ona izin verendir. Ã–nce Authentication olmasÄ± gerekir.
 
-			app.MapControllers();
-
+			app.UseStaticFiles();
+            app.MapControllers();
+			
+            // SignalR Hub'larÄ±nÄ± mapleyin
+            app.MapHub<StokHub>("/stokHub");
+            app.MapHub<BildirimHub>("/bildirimHub");
+            app.MapHub<ProductsHub>("/productsHub");
+			
 			app.Run();
 		}
 	}

@@ -15,7 +15,14 @@ namespace DataAccess.Concrete.EntityFramework
 		// onConfiguring hangi veri tabanını seçeceğimizi belirliyoruz.
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
-			optionsBuilder.UseSqlServer(@"Server = (localdb)\mssqllocaldb;Database=Northwind;Trusted_Connection=true");
+			// Eski bağlantı
+			 //optionsBuilder.UseSqlServer(@"Server = OMERLAPTOP\SQLEXPRESS;Database=Northwind;Trusted_Connection=true");
+
+			// Yeni bağlantı - Windows Authentication ile
+			optionsBuilder.UseSqlServer(@"Server=OMERLAPTOP\SQLEXPRESS;Database=Northwind;Trusted_Connection=true;TrustServerCertificate=True");
+
+			// VEYA SQL Server Authentication kullanıyorsanız (kullanıcı adı ve şifre ile)
+			 //optionsBuilder.UseSqlServer(@"Server=OMERLAPTOP\SQLEXPRESS;Database=Northwind;User Id=sa;Password=123456789/y;TrustServerCertificate=True");
 		}
         
 		
@@ -27,6 +34,10 @@ namespace DataAccess.Concrete.EntityFramework
 		public DbSet<OperationClaim> OperationClaims { get; set; }
 		public DbSet<UserOperationClaim> UserOperationClaims { get; set; }
 
+		public DbSet<ProductImage> ProductImages { get; set; }
+		
+		public DbSet<Inova> Inovas {  get; set; }
+		public DbSet<LogDetail> LogDetails { get; set; }
 
 	}
 }

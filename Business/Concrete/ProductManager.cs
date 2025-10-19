@@ -2,7 +2,6 @@
 using Business.Constants;
 using Core.Utilities.Results;
 using DataAccess.Abstract;
-using DataAccess.Concrete.InMemory;
 using Entities.Concrete;
 using Entities.DTOs;
 using System;
@@ -14,12 +13,14 @@ using Business.ValidationRules.FluentValidation;
 using Core.CrossCuttingConcerns.Validation;
 using FluentValidation;
 using Core.Aspects.Autofac.Validation;
-using Business.CCS;
 using Core.Utilities.Business;
 using Business.BusinessAspects.Autofac;
 using Core.Aspects.Autofac.Caching;
 using Core.Aspects.Autofac.Transaction;
 using Core.Aspects.Autofac.Performance;
+using DataAccess.Concrete.EntityFramework;
+using Core.Aspects.Autofac.Logging;
+using Microsoft.EntityFrameworkCore;
 
 namespace Business.Concrete
 {
@@ -39,17 +40,17 @@ namespace Business.Concrete
 
 
 
-		[ValidationAspect(typeof(ProductValidator))]
 
 		//Claim -- yetkilendirmede "product.add veya admin olması gerekiyor.
-		[SecuredOperation("product.add,admin")]
-		
-		[CacheRemoveAspect("IProductService.Get")]
-		public IResult Add(Product product)
+        [SecuredOperation("product.add")]
+        [ValidationAspect(typeof(ProductValidator))]
+        //[CacheRemoveAspect("IProductService.Get")]
+        
+        public IResult Add(Product product)
 		{
 
-			IResult result = BusinessRules.Run(NotSameProductName(product.ProductName),
-				CheckIfProductCountOfCategoryCorrect(product.CategoryId), CheckIfCategoryLimitExceded());
+			IResult result = BusinessRules.Run(NotSameProductName(product.ProductName)
+				);
 
 			if (result != null) //kurala uymayan durum oluşmuşsa.
 			{
@@ -73,11 +74,11 @@ namespace Business.Concrete
 
 		}
 
-		[SecuredOperation("product.list,user")]
-		[CacheAspect()] //key,value
+		//[SecuredOperation("product.list,user")]
+		//[CacheAspect()] //key,value
 		public IDataResult<List<Product>> GetAll()
 		{
-			if (DateTime.Now.Hour == 12)
+			if (DateTime.Now.Hour== 58)
 			{
 				return new ErrorDataResult<List<Product>>(Messages.MaintenanceTime);
 			}
@@ -107,25 +108,67 @@ namespace Business.Concrete
 		}
 
 
-		[ValidationAspect(typeof(ProductValidator))]
-		[CacheRemoveAspect("IProductService.Get")]
-		[PerformanceAspect(5)]
-		public IResult Update(Product product)
-		{
-			var result = _productDal.GetAll(p => p.CategoryId == product.CategoryId).Count;
-			if (result > 25)
-			{
-				return new ErrorResult(Messages.ProductCountOfCategoryError);
-			}
-			throw new NotImplementedException();
-		}
-		
+		[SecuredOperation("product.add")]
+        //[ValidationAspect(typeof(ProductValidator))]
+        //[CacheRemoveAspect("IProductService.Get")]
+        [PerformanceAspect(5)]
+        
+		[LogAspect(typeof(DatabaseLogService))]
 
-		//iş kuralı parçacığı olduğu icin sadece burada kullanılmalı bu yüzden private olmalı.
-		private IResult CheckIfProductCountOfCategoryCorrect(int categoryId)
+        public IResult Update(ProductDetailDto productDto)
+        {
+            // Ürünü güncelle
+            var product = _productDal.Get(p => p.ProductId == productDto.ProductId);
+            
+            if (product == null)
+            {
+                return new ErrorResult("Ürün bulunamadı");
+            }
+            
+            product.ProductName = productDto.ProductName;
+            product.CategoryId = productDto.CategoryId;
+            product.UnitPrice = productDto.UnitPrice;
+            product.UnitsInStock = (short)productDto.UnitsInStock;
+            
+            // Veritabanında güncelle
+            _productDal.Update(product);
+            
+            return new SuccessResult("Ürün başarıyla güncellendi");
+        }
+
+        public IResult Delete(int productId)
+        {
+            // Ürünü bul
+            var product = _productDal.Get(p => p.ProductId == productId);
+            
+            if (product == null)
+            {
+                return new ErrorResult("Ürün bulunamadı");
+            }
+            
+            // Veritabanından sil
+            _productDal.Delete(product);
+            
+            return new SuccessResult("Ürün başarıyla silindi");
+        }
+
+
+
+
+
+
+
+
+
+
+
+
+
+        //iş kuralı parçacığı olduğu icin sadece burada kullanılmalı bu yüzden private olmalı.
+        private IResult CheckIfProductCountOfCategoryCorrect(int categoryId)
 		{
 			var result = _productDal.GetAll(p => p.CategoryId == categoryId).Count;
-			if (result > 25)
+			if (result > 500)
 			{
 				return new ErrorResult(Messages.ProductCountOfCategoryError);
 			}
@@ -143,7 +186,7 @@ namespace Business.Concrete
 		private IResult CheckIfCategoryLimitExceded() //Category service kullanan bir ürünün kuralıdır
 		{
 			var result = _categoryService.GetAll();
-			if (result.Data.Count > 25)
+			if (result.Data.Count > 500)
 			{
 				return new ErrorResult(Messages.CategoryLimitExceded);
 			}

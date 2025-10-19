@@ -14,18 +14,22 @@ namespace Business.ValidationRules.FluentValidation
 		{
 			RuleFor(p => p.ProductName).MinimumLength(2);
 			RuleFor(p => p.ProductName).NotEmpty();
-			RuleFor(p => p.UnitPrice).NotEmpty();
-			RuleFor(p => p.UnitPrice).GreaterThan(0);
-			RuleFor(p => p.UnitPrice).GreaterThanOrEqualTo(10).When(p => p.CategoryId == 1);
-			RuleFor(p => p.ProductName).Must(StartWithA).WithMessage("Ürünler A harfi ile başlamalı");
+			//RuleFor(p => p.UnitPrice).NotEmpty();
+			//RuleFor(p => p.UnitPrice).GreaterThan(0);
+			//RuleFor(p => p.UnitPrice).GreaterThanOrEqualTo(10).When(p => p.CategoryId == 1).WithMessage("Unitprice değeri 10 değerinden büyük veya eşit olmalı");
+			RuleFor(p => p.ProductName).Must(StartWithUpperCase).WithMessage("Büyük harf kullanınız.");
 			
 
 
 		}
 
-		private bool StartWithA(string arg)
+		private bool StartWithUpperCase(string arg)
 		{
-			return arg.StartsWith("A");
+			char firstChar=arg[0];
+
+			return char.IsUpper(firstChar);
+
+
 		}
 	}
 }

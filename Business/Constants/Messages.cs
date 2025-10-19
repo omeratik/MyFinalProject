@@ -23,10 +23,17 @@ namespace Business.Constants
 		
 		public static string UserRegistered="Kullanıcı kayıt oldu.";
 		public static string UserNotFound="Kullanıcı bulunamadı";
-		public static string PasswordError = "Hatalı parola";
+		public static string PasswordError = "Sarola Hatası";
 		public static string SuccessfulLogin = "Giriş başarılı";
 		public static string UserAlreadyExists = "Kullanıcı zaten var.";
-		public static string AccessTokenCreated = "Token olusturuldu.";
-		internal static string ProductUpdated;
-	}
+		public static string AccessTokenCreated = "Giriş başarılı.";
+		public static string ProductUpdated;
+		public static string ProductImageAdded = "Görsel eklendi";
+        internal static string CarImageDeleted;
+        internal static string FailedProductImageAdd;
+
+		public static string ProductImageNotFound = "Görsel eklenemedi";
+        internal static string InovaAdded;
+        internal static string InovasListed;
+    }
 }

@@ -1,4 +1,5 @@
 ﻿using Business.Abstract;
+using Business.BusinessAspects.Autofac;
 using Core.Utilities.Results;
 using DataAccess.Abstract;
 using Entities.Concrete;
@@ -14,12 +15,14 @@ namespace Business.Concrete
 	{
 		ICategoryDal _categoryDal;
 
+        
 		public CategoryManager(ICategoryDal categoryDal)
 		{
 			_categoryDal = categoryDal;
 		}
 
-		public IDataResult<List<Category>> GetAll()
+        //[SecuredOperation("product.add,user")]
+        public IDataResult<List<Category>> GetAll()
 		{
 			
 			
